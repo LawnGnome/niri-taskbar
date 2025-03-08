@@ -7,7 +7,10 @@ use serde::{Deserialize, Deserializer};
 /// The taskbar configuration.
 #[derive(Debug, Default, Deserialize)]
 pub struct Config {
+    #[serde(default)]
     apps: HashMap<String, Vec<AppConfig>>,
+    #[serde(default)]
+    notifications: bool,
 }
 
 impl Config {
@@ -39,6 +42,11 @@ impl Config {
             ),
             None => Box::new(std::iter::empty()),
         }
+    }
+
+    /// Returns true if notification support is enabled.
+    pub fn notifications_enabled(&self) -> bool {
+        self.notifications
     }
 }
 

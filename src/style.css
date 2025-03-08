@@ -8,6 +8,10 @@ button.focused {
   background: rgba(255, 255, 255, 0.3);
 }
 
+button.urgent {
+  background: red;
+}
+
 button:hover {
   background: rgba(255, 255, 255, 0.8);
 }

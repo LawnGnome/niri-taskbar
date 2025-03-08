@@ -1,5 +1,6 @@
-use niri_ipc::{socket::Socket, Action, Reply, Request};
-use window_stream::WindowStream;
+use niri_ipc::{Action, Reply, Request, socket::Socket};
+pub use state::Snapshot;
+pub use window_stream::WindowStream;
 
 use crate::error::Error;
 

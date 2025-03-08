@@ -1,10 +1,10 @@
 use std::{cell::RefCell, path::PathBuf};
 
 use waybar_cffi::gtk::{
-    self as gtk,
+    self as gtk, Border, CssProvider, IconLookupFlags, IconSize, IconTheme, ReliefStyle,
+    StateFlags,
     gdk_pixbuf::Pixbuf,
     prelude::{ButtonExt, CssProviderExt, GdkPixbufExt, IconThemeExt, StyleContextExt, WidgetExt},
-    Border, CssProvider, IconLookupFlags, IconSize, IconTheme, ReliefStyle, StateFlags,
 };
 
 use crate::state::State;
@@ -76,10 +76,13 @@ impl Button {
 
     /// Sets whether the window represented by this button is currently focused.
     pub fn set_focus(&self, focus: bool) {
+        let context = self.button.style_context();
+
         if focus {
-            self.button.style_context().add_class("focused");
+            context.add_class("focused");
+            context.remove_class("urgent");
         } else {
-            self.button.style_context().remove_class("focused");
+            context.remove_class("focused");
         }
     }
 
@@ -104,6 +107,13 @@ impl Button {
                 }
             }
         }
+    }
+
+    /// Sets the window to urgent: that is, needing attention.
+    ///
+    /// This state is automatically cleared the next time the window is focused.
+    pub fn set_urgent(&self) {
+        self.button.style_context().add_class("urgent");
     }
 
     /// Returns the actual [`gtk::Button`] widget.

@@ -12,7 +12,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 async-channel = "2.3.1"
+async-stream = "0.3.6"
 freedesktop-icons = "0.3.1"
+futures = "0.3.31"
 itertools = "0.14.0"
 linicon = "2.3.0"
 niri-ipc = "25.1.0"
@@ -20,3 +22,4 @@ regex = "1.11.1"
 serde = { version = "1.0.218", features = ["derive"] }
 thiserror = "2.0.11"
 waybar-cffi = "0.1.0"
+zbus = "5.5.0"

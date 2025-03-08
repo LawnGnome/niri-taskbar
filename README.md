@@ -10,7 +10,8 @@ windows are ordered by creation time, at least as of Waybar 0.12.0).
 
 ## Installation
 
-At the moment, this needs to built from source. (If you do package it for a distro, let me know and I'll update the README.)
+At the moment, this needs to built from source. (If you do package it for a
+distro, let me know and I'll update the README.)
 
 ### Requirements
 
@@ -41,8 +42,8 @@ practice will look something like this:
   "modules-left": ["cffi/niri-taskbar"],
   // ...
   "cffi/niri-taskbar": {
-    "module-path": "/your/path/to/libniri_taskbar.so"
-  }
+    "module-path": "/your/path/to/libniri_taskbar.so",
+  },
 }
 ```
 
@@ -64,11 +65,11 @@ so:
       "signal": [
         {
           "match": "\\([0-9]+\\)$",
-          "class": "unread"
-        }
-      ]
-    }
-  }
+          "class": "unread",
+        },
+      ],
+    },
+  },
 }
 ```
 
@@ -83,6 +84,26 @@ added.
 The easiest way to get the app ID for a window is to ask Niri with `niri msg
 windows`. Note that app IDs are case sensitive.
 
+### Notifications
+
+You can enable the `notifications` configuration option to have the taskbar
+listen to notifications and attempt to highlight the app that sent the
+notification.
+
+Configuration wise:
+
+```jsonc
+{
+  "cffi/niri-taskbar": {
+    // other settings
+    "notifications": true,
+  },
+}
+```
+
+Highlighted buttons will gain the `.urgent` CSS class. Default styling is
+included, but can be overridden [as described below](#styling).
+
 ## Styling
 
 The taskbar uses [the same Gtk styling mechanism as Waybar][style]. The top
@@ -90,7 +111,8 @@ level taskbar element is given the class `.niri-taskbar`, and contains `button`
 elements within it. The only CSS class that is applied by default is the
 `focused` class, which is added to the button for the currently focused window.
 
-The default styling assumes a dark background. It provides a basic hover effect, and highlights the focused window.
+The default styling assumes a dark background. It provides a basic hover
+effect, and highlights the focused window.
 
 For a light background, something like this is likely good:
 
@@ -104,7 +126,9 @@ For a light background, something like this is likely good:
 }
 ```
 
-If you apply custom CSS classes using application rules as described above, then those can be styled in the same way. For instance, with the `unread` class demonstrated above, you could add a border highlight like so:
+If you apply custom CSS classes using application rules as described above,
+then those can be styled in the same way. For instance, with the `unread` class
+demonstrated above, you could add a border highlight like so:
 
 ```css
 .niri-taskbar button {
