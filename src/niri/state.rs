@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::BTreeMap};
+use std::{cmp::Ordering, collections::BTreeMap, fmt::Display};
 
 use niri_ipc::{Event, Window, Workspace};
 
@@ -13,6 +13,7 @@ impl WindowSet {
     }
 
     /// Updates the window set based on the given [`niri_ipc::Event`].
+    #[tracing::instrument(level = "TRACE", skip(self))]
     pub fn with_event(&mut self, event: Event) -> Option<Snapshot> {
         // This is mildly annoying, because Niri actually has the same state within it and could
         // easily send it on each event, but we have to replicate Niri's own logic and hope we get
@@ -46,21 +47,21 @@ impl WindowSet {
                 if let Some(Inner::Ready(state)) = &mut self.0 {
                     state.remove_window(id);
                 } else {
-                    eprintln!("unexpected state {self:?} for WindowClosed event");
+                    tracing::warn!(%self, "unexpected state for WindowClosed event");
                 }
             }
             Event::WindowOpenedOrChanged { window } => {
                 if let Some(Inner::Ready(state)) = &mut self.0 {
                     state.upsert_window(window);
                 } else {
-                    eprintln!("unexpected state {self:?} for WindowOpenedOrChanged event");
+                    tracing::warn!(%self, "unexpected state for WindowOpenedOrChanged event");
                 }
             }
             Event::WindowFocusChanged { id } => {
                 if let Some(Inner::Ready(state)) = &mut self.0 {
                     state.set_focus(id);
                 } else {
-                    eprintln!("unexpected state {self:?} for WindowFocusChanged event");
+                    tracing::warn!(%self, "unexpected state for WindowFocusChanged event");
                 }
             }
             _ => {}
@@ -71,6 +72,21 @@ impl WindowSet {
         } else {
             None
         }
+    }
+}
+
+impl Display for WindowSet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match &self.0 {
+                Some(Inner::Ready(_)) => "ready",
+                Some(Inner::WindowsOnly(_)) => "windows only",
+                Some(Inner::WorkspacesOnly(_)) => "workspaces only",
+                None => "uninitialised",
+            }
+        )
     }
 }
 

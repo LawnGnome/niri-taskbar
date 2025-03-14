@@ -14,15 +14,15 @@ pub struct WindowStream {
 }
 
 impl WindowStream {
-    pub(super) fn new() -> Result<Self, Error> {
+    pub(super) fn new() -> Self {
         let (tx, rx) = async_channel::unbounded();
         std::thread::spawn(move || {
             if let Err(e) = window_stream(tx) {
-                eprintln!("niri taskbar window stream error: {e:?}");
+                tracing::error!(%e, "Niri taskbar window stream error");
             }
         });
 
-        Ok(Self { rx })
+        Self { rx }
     }
 
     /// Awaits the next [`Snapshot`].
@@ -37,16 +37,21 @@ fn window_stream(tx: Sender<Snapshot>) -> Result<(), Error> {
         .map_err(Error::NiriIpc)?;
     reply::typed!(Handled, reply)?;
 
-    // XXX: it's not clear to me if there are error conditions that make sense
-    // to handle besides EOF, but it's also not clear that there's actually a
-    // way to detect just that.
     let mut state = WindowSet::new();
-    while let Ok(event) = next() {
-        if let Some(snapshot) = state.with_event(event) {
-            tx.send_blocking(snapshot)
-                .map_err(|_| Error::WindowStreamSend)?;
+    loop {
+        // There appears to be no EOF state, presumably on the assumption that if Niri goes away it
+        // doesn't matter what happens to this process.
+        match next() {
+            Ok(event) => {
+                if let Some(snapshot) = state.with_event(event) {
+                    tx.send_blocking(snapshot)
+                        .map_err(|_| Error::WindowStreamSend)?;
+                }
+            }
+            Err(e) => {
+                tracing::error!(%e, "Niri IPC error reading from event stream");
+                return Err(Error::NiriIpc(e));
+            }
         }
     }
-
-    Ok(())
 }

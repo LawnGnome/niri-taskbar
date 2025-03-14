@@ -15,6 +15,7 @@ pub struct Cache(Arc<Mutex<HashMap<String, PathBuf>>>);
 
 impl Cache {
     /// Look up an icon for the given application ID.
+    #[tracing::instrument(level = "TRACE", ret)]
     pub fn lookup(&self, id: &str) -> Option<PathBuf> {
         let mut cache = self.0.lock().expect("icon cache lock");
 

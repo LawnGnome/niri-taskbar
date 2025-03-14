@@ -1,20 +1,27 @@
-use std::{cell::RefCell, path::PathBuf};
+use std::{cell::RefCell, fmt::Debug, path::PathBuf};
 
 use waybar_cffi::gtk::{
-    self as gtk,
+    self as gtk, Border, CssProvider, IconLookupFlags, IconSize, IconTheme, ReliefStyle,
+    StateFlags,
     gdk_pixbuf::Pixbuf,
     prelude::{ButtonExt, CssProviderExt, GdkPixbufExt, IconThemeExt, StyleContextExt, WidgetExt},
-    Border, CssProvider, IconLookupFlags, IconSize, IconTheme, ReliefStyle, StateFlags,
 };
 
 use crate::state::State;
 
 /// A taskbar button.
-#[derive(Debug)]
 pub struct Button {
     app_id: Option<String>,
     button: gtk::Button,
     state: State,
+}
+
+impl Debug for Button {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Button")
+            .field("app_id", &self.app_id)
+            .finish()
+    }
 }
 
 // These have to be declared as thread locals because Gtk objects are (generally) not Send.
@@ -37,6 +44,7 @@ thread_local! {
 
 impl Button {
     /// Instantiates a new button, including creating a new Gtk button internally.
+    #[tracing::instrument(level = "TRACE", fields(app_id = &window.app_id))]
     pub fn new(state: &State, window: &niri_ipc::Window) -> Self {
         let state = state.clone();
 
@@ -75,15 +83,20 @@ impl Button {
     }
 
     /// Sets whether the window represented by this button is currently focused.
+    #[tracing::instrument(level = "TRACE")]
     pub fn set_focus(&self, focus: bool) {
+        let context = self.button.style_context();
+
         if focus {
-            self.button.style_context().add_class("focused");
+            context.add_class("focused");
+            context.remove_class("urgent");
         } else {
-            self.button.style_context().remove_class("focused");
+            context.remove_class("focused");
         }
     }
 
     /// Sets the window title.
+    #[tracing::instrument(level = "TRACE")]
     pub fn set_title(&self, title: Option<&str>) {
         self.button.set_tooltip_text(title);
 
@@ -106,6 +119,14 @@ impl Button {
         }
     }
 
+    /// Sets the window to urgent: that is, needing attention.
+    ///
+    /// This state is automatically cleared the next time the window is focused.
+    #[tracing::instrument(level = "TRACE")]
+    pub fn set_urgent(&self) {
+        self.button.style_context().add_class("urgent");
+    }
+
     /// Returns the actual [`gtk::Button`] widget.
     pub fn widget(&self) -> &gtk::Button {
         &self.button
@@ -116,11 +137,12 @@ impl Button {
 
         self.button.connect_clicked(move |_| {
             if let Err(e) = state.niri().activate_window(window_id) {
-                eprintln!("error trying to activate window {}: {e:?}", window_id);
+                tracing::warn!(%e, id = window_id, "error trying to activate window");
             }
         });
     }
 
+    #[tracing::instrument(level = "TRACE")]
     fn connect_size_allocate(&self, icon_path: Option<PathBuf>) {
         let last_size = RefCell::new(None);
 
