@@ -14,7 +14,7 @@ impl WindowSet {
 
     /// Updates the window set based on the given [`niri_ipc::Event`].
     #[tracing::instrument(level = "TRACE", skip(self))]
-    pub fn with_event(&mut self, event: Event) -> Option<Snapshot> {
+    pub fn with_event(&mut self, event: Event, only_current_workspace: bool) -> Option<Snapshot> {
         // This is mildly annoying, because Niri actually has the same state within it and could
         // easily send it on each event, but we have to replicate Niri's own logic and hope we get
         // it right.
@@ -64,11 +64,18 @@ impl WindowSet {
                     tracing::warn!(%self, "unexpected state for WindowFocusChanged event");
                 }
             }
+            Event::WorkspaceActivated { id, .. } => {
+                if let Some(Inner::Ready(state)) = &mut self.0 {
+                    state.set_active_workspace(id)
+                } else {
+                    eprintln!("unexpected state {self:?} for WorkspaceActivated event");
+                }
+            }
             _ => {}
         }
 
         if let Some(Inner::Ready(state)) = &self.0 {
-            Some(state.snapshot())
+            Some(state.snapshot(only_current_workspace))
         } else {
             None
         }
@@ -144,6 +151,12 @@ impl Niri {
             window.is_focused = Some(window.id) == id;
         }
     }
+    
+    fn set_active_workspace(&mut self, id: u64) {
+        for workspace in self.workspaces.values_mut() {
+            workspace.is_active = workspace.id == id
+        }
+    }
 
     fn upsert_window(&mut self, window: NiriWindow) {
         // Ensure that we update other windows if the new window is focused.
@@ -157,7 +170,7 @@ impl Niri {
     }
 
     /// Create a snapshot of the current window state, ordered by workspace index.
-    fn snapshot(&self) -> Snapshot {
+    fn snapshot(&self, only_current_workspace: bool) -> Snapshot {
         struct WindowWorkspace<'a> {
             window: &'a NiriWindow,
             workspace: &'a Workspace,
@@ -169,7 +182,11 @@ impl Niri {
             .filter_map(|window| {
                 if let Some(ws_id) = window.workspace_id {
                     if let Some(workspace) = self.workspaces.get(&ws_id) {
-                        return Some(WindowWorkspace { window, workspace });
+                        return if only_current_workspace && !workspace.is_active {
+                            None
+                        } else {
+                            Some(WindowWorkspace { window, workspace })
+                        };
                     }
                 }
                 None
