@@ -5,9 +5,11 @@ use regex::Regex;
 use serde::{Deserialize, Deserializer};
 
 /// The taskbar configuration.
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct Config {
     apps: HashMap<String, Vec<AppConfig>>,
+    #[serde(default)]
+    only_current_workspace: bool,
 }
 
 impl Config {
@@ -40,9 +42,15 @@ impl Config {
             None => Box::new(std::iter::empty()),
         }
     }
+
+    /// Show windows only from active workspace
+    #[inline]
+    pub fn only_current_workspace(&self) -> bool {
+        self.only_current_workspace
+    }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 struct AppConfig {
     #[serde(rename = "match", deserialize_with = "deserialise_regex")]
     re: Regex,
