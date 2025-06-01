@@ -78,13 +78,6 @@ impl WindowSet {
                     }
                 }
             }
-            Event::WorkspaceActivated { id, .. } => {
-                if let Some(Inner::Ready(state)) = &mut self.0 {
-                    state.set_active_workspace(id)
-                } else {
-                    eprintln!("unexpected state {self:?} for WorkspaceActivated event");
-                }
-            }
             _ => {}
         }
 
@@ -177,11 +170,6 @@ impl Niri {
             window.layout = layout;
         } else {
             tracing::warn!(window_id, ?layout, "got window layout for unknown window");
-        }
-    }
-    fn set_active_workspace(&mut self, id: u64) {
-        for workspace in self.workspaces.values_mut() {
-            workspace.is_active = workspace.id == id
         }
     }
 
