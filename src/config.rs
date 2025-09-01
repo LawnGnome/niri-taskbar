@@ -5,7 +5,7 @@ use regex::Regex;
 use serde::{Deserialize, Deserializer};
 
 /// The taskbar configuration.
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct Config {
     #[serde(default)]
     apps: HashMap<String, Vec<AppConfig>>,
@@ -13,9 +13,11 @@ pub struct Config {
     notifications: Notifications,
     #[serde(default)]
     show_all_outputs: bool,
+    #[serde(default)]
+    only_current_workspace: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Notifications {
     #[serde(default = "default_true")]
     enabled: bool,
@@ -99,9 +101,15 @@ impl Config {
     pub fn show_all_outputs(&self) -> bool {
         self.show_all_outputs
     }
+
+    /// Show windows only from active workspace
+    #[inline]
+    pub fn only_current_workspace(&self) -> bool {
+        self.only_current_workspace
+    }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 struct AppConfig {
     #[serde(rename = "match", deserialize_with = "deserialise_regex")]
     re: Regex,
