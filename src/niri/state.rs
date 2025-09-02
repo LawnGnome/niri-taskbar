@@ -1,6 +1,6 @@
-use std::{cmp::Ordering, collections::BTreeMap, fmt::Display, ops::Deref};
+use std::{collections::BTreeMap, fmt::Display, ops::Deref};
 
-use niri_ipc::{Event, Window as NiriWindow, Workspace};
+use niri_ipc::{Event, Window as NiriWindow, WindowLayout, Workspace};
 
 /// The toplevel window set within Niri, updated via the Niri event stream.
 #[derive(Debug)]
@@ -69,6 +69,13 @@ impl WindowSet {
                     state.set_active_workspace(id)
                 } else {
                     eprintln!("unexpected state {self:?} for WorkspaceActivated event");
+                }
+            }
+            Event::WindowLayoutsChanged { changes } => {
+                if let Some(Inner::Ready(state)) = &mut self.0 {
+                    for (window_id, layout) in changes.into_iter() {
+                        state.update_window_layout(window_id, layout);
+                    }
                 }
             }
             _ => {}
@@ -158,6 +165,14 @@ impl Niri {
         }
     }
 
+    fn update_window_layout(&mut self, window_id: u64, layout: WindowLayout) {
+        if let Some(window) = self.windows.get_mut(&window_id) {
+            window.layout = layout;
+        } else {
+            tracing::warn!(window_id, ?layout, "got window layout for unknown window");
+        }
+    }
+
     fn upsert_window(&mut self, window: NiriWindow) {
         // Ensure that we update other windows if the new window is focused.
         if window.is_focused {
@@ -192,11 +207,20 @@ impl Niri {
                 None
             })
             .collect();
-        wws.sort_by(|a, b| match a.workspace.idx.cmp(&b.workspace.idx) {
-            // Once https://github.com/YaLTeR/niri/discussions/721 is resolved, we can order
-            // windows within a workspace based on their origin, which should feel more natural.
-            Ordering::Equal => a.window.id.cmp(&b.window.id),
-            order => order,
+        wws.sort_by(|a, b| {
+            // Compare by workspace ID first, then window position, then window ID as a last
+            // fallback.
+            a.workspace
+                .idx
+                .cmp(&b.workspace.idx)
+                .then_with(|| {
+                    let a_pos = a.window.layout.pos_in_scrolling_layout.unwrap_or_default();
+                    let b_pos = b.window.layout.pos_in_scrolling_layout.unwrap_or_default();
+
+                    // Compare by column index, then tile index within the column.
+                    a_pos.0.cmp(&b_pos.0).then_with(|| a_pos.1.cmp(&b_pos.1))
+                })
+                .then_with(|| a.window.id.cmp(&b.window.id))
         });
 
         wws.into_iter()
