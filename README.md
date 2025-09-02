@@ -3,8 +3,9 @@
 This provides a [Waybar][waybar] taskbar for [Niri][niri].
 
 The main shift from the builtin `wlr/taskbar` module is that windows are always
-ordered by workspace index, then window ID (which essentially means that the
-windows are ordered by creation time, at least as of Waybar 0.12.0).
+ordered by workspace index, then position (as of Niri 25.08), then window ID
+(which essentially means that the windows are ordered by creation time, at
+least as of Waybar 0.12.0).
 
 ![Example screenshot](images/screenshot.png)
 
@@ -16,7 +17,7 @@ distro, let me know and I'll update the README.)
 ### Requirements
 
 - Rust 1.87.0 or later
-- Niri 25.05
+- Niri 25.08
 - Gtk+ 3 (including the development package on distros that separate those out)
 - Waybar 0.12.0 (or any version that's API compatible with 0.12, which will
   _probably_ include later versions, but I have no actual knowledge there)
@@ -44,7 +45,7 @@ practice will look something like this:
   // ...
   "cffi/niri-taskbar": {
     "module_path": "/your/path/to/libniri_taskbar.so",
-  }
+  },
 }
 ```
 
@@ -95,8 +96,8 @@ applications on all outputs:
 {
   "cffi/niri-taskbar": {
     // other settings
-    "show_all_outputs": true
-  }
+    "show_all_outputs": true,
+  },
 }
 ```
 
