@@ -25,7 +25,7 @@
         {
             niri-taskbar = rustPlatform.buildRustPackage rec {
               name = "niri-taskbar";
-              version = "0.3.0+niri.25.08"; # Todo get from toml?
+              version = "v${cargo_package.version}";
 
               src = lib.cleanSource ./.;
               
