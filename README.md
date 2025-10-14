@@ -18,6 +18,36 @@ update the README.
 @coreymwamba has kindly packaged this as [the `waybar-niri-taskbar` package in
 the AUR][aur].
 
+### NixOS flake
+
+This repo can be included as an input to a flake file and then activate the overlay:
+
+```nix
+modules = [
+  ...
+  ({pkgs, inputs, ...)}: {
+    nixpkgs.overlays = [
+      inputs.niri-taskbar.overlays.default
+    ];
+  })
+];
+```
+
+Then the package will be available to be included in your Waybar Home Manager configuration:
+
+```nix
+programs.waybar.settings.main = {
+  modules-left = [ "cffi/niri-taskbar" ];
+  "cffi/niri-taskbar" = {
+    "module_path" = "${pkgs.niri-taskbar}/lib/libniri_taskbar.so";
+  };
+};
+```
+```
+```
+```
+```
+
 ### From source
 
 Users of other distributions and OSes will need to build from source.
