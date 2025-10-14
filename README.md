@@ -43,10 +43,6 @@ programs.waybar.settings.main = {
   };
 };
 ```
-```
-```
-```
-```
 
 ### From source
 
