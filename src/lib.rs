@@ -388,15 +388,17 @@ impl Instance {
         for window in filtered_windows.iter().copied() {
             seen_workspaces.insert(window.workspace_idx());
 
-            // Ensure a label exists for this workspace even if the button already
-            // existed; this prevents labels from disappearing when windows move
-            // between workspaces.
+            // If configured, ensure a label exists for this workspace even if the
+            // button already existed; this prevents labels from disappearing when
+            // windows move between workspaces.
             let ws_idx = window.workspace_idx();
-            if !self.workspace_labels.contains_key(&ws_idx) {
-                let label = gtk::Label::new(Some(&ws_idx.to_string()));
-                label.style_context().add_class("workspace-number");
-                self.container.add(&label);
-                self.workspace_labels.insert(ws_idx, label);
+            if self.state.config().show_workspace_numbers() {
+                if !self.workspace_labels.contains_key(&ws_idx) {
+                    let label = gtk::Label::new(Some(&ws_idx.to_string()));
+                    label.style_context().add_class("workspace-number");
+                    self.container.add(&label);
+                    self.workspace_labels.insert(ws_idx, label);
+                }
             }
 
             let button = match self.buttons.entry(window.id) {
@@ -430,10 +432,22 @@ impl Instance {
         }
 
         // Remove any workspace labels for workspaces we didn't see.
-        let existing_ws: Vec<u64> = self.workspace_labels.keys().copied().collect();
-        for ws in existing_ws.into_iter() {
-            if !seen_workspaces.contains(&ws) {
-                if let Some(label) = self.workspace_labels.remove(&ws) {
+        if self.state.config().show_workspace_numbers() {
+            let existing_ws: Vec<u64> = self.workspace_labels.keys().copied().collect();
+            for ws in existing_ws.into_iter() {
+                if !seen_workspaces.contains(&ws) {
+                    if let Some(label) = self.workspace_labels.remove(&ws) {
+                        self.container.remove(&label);
+                    }
+                }
+            }
+        } else {
+            // If workspace numbers are disabled, ensure any existing labels are removed
+            // from the container and cleared.
+            if !self.workspace_labels.is_empty() {
+                // Consume the map so we can remove widgets from the container.
+                let labels = std::mem::take(&mut self.workspace_labels);
+                for (_ws, label) in labels.into_iter() {
                     self.container.remove(&label);
                 }
             }
@@ -447,9 +461,11 @@ impl Instance {
         for window in filtered_windows.iter().copied() {
             let ws_idx = window.workspace_idx();
             if !pushed_ws.contains(&ws_idx) {
-                if let Some(label) = self.workspace_labels.get(&ws_idx) {
-                    desired.push(label.clone().upcast::<gtk::Widget>());
-                    pushed_ws.insert(ws_idx);
+                if self.state.config().show_workspace_numbers() {
+                    if let Some(label) = self.workspace_labels.get(&ws_idx) {
+                        desired.push(label.clone().upcast::<gtk::Widget>());
+                        pushed_ws.insert(ws_idx);
+                    }
                 }
             }
 
