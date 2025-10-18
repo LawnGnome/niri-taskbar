@@ -128,7 +128,9 @@ Configuration wise:
 {
   "cffi/niri-taskbar": {
     // other settings
-    "notifications": true,
+    "notifications": {
+      "enabled": true,
+    },
   },
 }
 ```
