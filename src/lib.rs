@@ -18,7 +18,8 @@ use waybar_cffi::{
     gtk::{
         self, Orientation, gio,
         glib::MainContext,
-        traits::{BoxExt, ContainerExt, StyleContextExt, WidgetExt},
+    traits::{BoxExt, ContainerExt, StyleContextExt, WidgetExt},
+    prelude::Cast,
     },
     waybar_module,
 };
@@ -83,6 +84,9 @@ async fn init(info: &waybar_cffi::InitInfo, state: State) -> Result<(), Error> {
 
 struct Instance {
     buttons: BTreeMap<u64, Button>,
+    /// Map of workspace index -> label widget. Each workspace gets exactly one label
+    /// shown before the first app icon belonging to that workspace.
+    workspace_labels: BTreeMap<u64, gtk::Label>,
     container: gtk::Box,
     last_snapshot: Option<Snapshot>,
     state: State,
@@ -92,6 +96,7 @@ impl Instance {
     pub fn new(state: State, container: gtk::Box) -> Self {
         Self {
             buttons: Default::default(),
+            workspace_labels: Default::default(),
             container,
             last_snapshot: None,
             state,
@@ -364,19 +369,43 @@ impl Instance {
         // We need to track which, if any, windows are no longer present.
         let mut omitted = self.buttons.keys().copied().collect::<BTreeSet<_>>();
 
-        for window in windows.iter().filter(|window| {
-            filter
-                .lock()
-                .expect("output filter lock")
-                .should_show(window.output().unwrap_or_default())
-        }) {
+        // We'll track which workspaces we saw in this snapshot so we can remove labels for
+        // workspaces that no longer have any windows.
+        let mut seen_workspaces: BTreeSet<u64> = Default::default();
+
+        // Collect the windows we should show according to the output filter so we can both
+        // create/update widgets and then deterministically rebuild the container order.
+        let filtered_windows: Vec<_> = windows
+            .iter()
+            .filter(|window| {
+                filter
+                    .lock()
+                    .expect("output filter lock")
+                    .should_show(window.output().unwrap_or_default())
+            })
+            .collect();
+
+        for window in filtered_windows.iter().copied() {
+            seen_workspaces.insert(window.workspace_idx());
+
+            // Ensure a label exists for this workspace even if the button already
+            // existed; this prevents labels from disappearing when windows move
+            // between workspaces.
+            let ws_idx = window.workspace_idx();
+            if !self.workspace_labels.contains_key(&ws_idx) {
+                let label = gtk::Label::new(Some(&ws_idx.to_string()));
+                label.style_context().add_class("workspace-number");
+                self.container.add(&label);
+                self.workspace_labels.insert(ws_idx, label);
+            }
+
             let button = match self.buttons.entry(window.id) {
                 Entry::Occupied(entry) => entry.into_mut(),
                 Entry::Vacant(entry) => {
                     let button = Button::new(&self.state, window);
 
-                    // Implicitly adding the button widget to the box as we create it simplifies
-                    // reordering, since it means we can just do it as we go.
+                    // We add the widget here; container ordering will be rebuilt below so the
+                    // precise position doesn't matter yet.
                     self.container.add(button.widget());
                     entry.insert(button)
                 }
@@ -389,10 +418,8 @@ impl Instance {
             // Ensure we don't remove this button from the container.
             omitted.remove(&window.id);
 
-            // Since we get the windows in order in the snapshot, we can just
-            // push this to the back and then let other widgets push in front as
-            // we iterate.
-            self.container.reorder_child(button.widget(), -1);
+            // No per-button reordering here: we'll rebuild the container order below to
+            // ensure each workspace label appears immediately before its first app icon.
         }
 
         // Remove any windows that no longer exist.
@@ -400,6 +427,44 @@ impl Instance {
             if let Some(button) = self.buttons.remove(&id) {
                 self.container.remove(button.widget());
             }
+        }
+
+        // Remove any workspace labels for workspaces we didn't see.
+        let existing_ws: Vec<u64> = self.workspace_labels.keys().copied().collect();
+        for ws in existing_ws.into_iter() {
+            if !seen_workspaces.contains(&ws) {
+                if let Some(label) = self.workspace_labels.remove(&ws) {
+                    self.container.remove(&label);
+                }
+            }
+        }
+
+        // Rebuild the container order so that each workspace label appears immediately
+        // before the first app icon that belongs to that workspace.
+        let mut desired: Vec<gtk::Widget> = Vec::new();
+        let mut pushed_ws: BTreeSet<u64> = Default::default();
+
+        for window in filtered_windows.iter().copied() {
+            let ws_idx = window.workspace_idx();
+            if !pushed_ws.contains(&ws_idx) {
+                if let Some(label) = self.workspace_labels.get(&ws_idx) {
+                    desired.push(label.clone().upcast::<gtk::Widget>());
+                    pushed_ws.insert(ws_idx);
+                }
+            }
+
+            if let Some(button) = self.buttons.get(&window.id) {
+                desired.push(button.widget().clone().upcast::<gtk::Widget>());
+            }
+        }
+
+        // Remove all existing children and re-add in the desired order.
+        for child in self.container.children() {
+            self.container.remove(&child);
+        }
+
+        for widget in desired.into_iter() {
+            self.container.add(&widget);
         }
 
         // Ensure everything is rendered.
