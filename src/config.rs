@@ -11,6 +11,8 @@ pub struct Config {
     apps: HashMap<String, Vec<AppConfig>>,
     #[serde(default)]
     notifications: Notifications,
+    #[serde(default = "default_true")]
+    show_workspace_numbers: bool,
     #[serde(default)]
     show_all_outputs: bool,
 }
@@ -98,6 +100,11 @@ impl Config {
 
     pub fn show_all_outputs(&self) -> bool {
         self.show_all_outputs
+    }
+
+    /// Returns true if workspace numbers should be shown before each workspace's first icon.
+    pub fn show_workspace_numbers(&self) -> bool {
+        self.show_workspace_numbers
     }
 }
 

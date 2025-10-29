@@ -210,6 +210,7 @@ impl Niri {
             .map(|ww| Window {
                 window: ww.window.clone(),
                 output: ww.workspace.output.clone(),
+                workspace_idx: ww.workspace.idx as u64,
             })
             .collect()
     }
@@ -222,11 +223,17 @@ pub type Snapshot = Vec<Window>;
 pub struct Window {
     window: NiriWindow,
     output: Option<String>,
+    workspace_idx: u64,
 }
 
 impl Window {
     pub fn output(&self) -> Option<&str> {
         self.output.as_deref()
+    }
+
+    /// Returns the workspace index this window belongs to.
+    pub fn workspace_idx(&self) -> u64 {
+        self.workspace_idx
     }
 }
 
