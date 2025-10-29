@@ -16,10 +16,7 @@ use tracing_subscriber::{EnvFilter, fmt::format::FmtSpan};
 use waybar_cffi::{
     Module,
     gtk::{
-        self, Orientation, gio,
-        glib::MainContext,
-    traits::{BoxExt, ContainerExt, StyleContextExt, WidgetExt},
-    prelude::Cast,
+        self, Orientation, gio, glib::MainContext, prelude::Cast, traits::{BoxExt, ButtonExt, ContainerExt, StyleContextExt, WidgetExt}
     },
     waybar_module,
 };
@@ -86,7 +83,7 @@ struct Instance {
     buttons: BTreeMap<u64, Button>,
     /// Map of workspace index -> label widget. Each workspace gets exactly one label
     /// shown before the first app icon belonging to that workspace.
-    workspace_labels: BTreeMap<u64, gtk::Label>,
+    workspace_buttons: BTreeMap<u64, gtk::Button>,
     container: gtk::Box,
     last_snapshot: Option<Snapshot>,
     state: State,
@@ -96,7 +93,7 @@ impl Instance {
     pub fn new(state: State, container: gtk::Box) -> Self {
         Self {
             buttons: Default::default(),
-            workspace_labels: Default::default(),
+            workspace_buttons: Default::default(),
             container,
             last_snapshot: None,
             state,
@@ -128,6 +125,16 @@ impl Instance {
                     *output_filter.lock().expect("output filter lock") = new_filter;
                 }
             }
+        }
+    }
+
+    // Get output using the filter
+    async fn get_output(&self, filter: &Arc<Mutex<output::Filter>>) -> Option<String> {
+        let guard = filter.lock().ok()?;
+
+        match &*guard {
+            output::Filter::Only(output_name) => Some(output_name.clone()),
+            _ => None,
         }
     }
 
@@ -393,11 +400,19 @@ impl Instance {
             // windows move between workspaces.
             let ws_idx = window.workspace_idx();
             if self.state.config().show_workspace_numbers() {
-                if !self.workspace_labels.contains_key(&ws_idx) {
-                    let label = gtk::Label::new(Some(&ws_idx.to_string()));
-                    label.style_context().add_class("workspace-number");
-                    self.container.add(&label);
-                    self.workspace_labels.insert(ws_idx, label);
+                if !self.workspace_buttons.contains_key(&ws_idx) {
+                    let button = gtk::Button::with_label(&ws_idx.to_string());
+                    button.style_context().add_class("workspace-number"); //TODO: style
+
+                    let statec = self.state.clone();
+                    button.connect_clicked(move |_| {
+                        if let Err(e) = statec.niri().activate_workspace(ws_idx as u8) {
+                            tracing::warn!(%e, id = ws_idx, "error trying to activate workspace");
+                        }
+                    });
+
+                    self.container.add(&button);
+                    self.workspace_buttons.insert(ws_idx, button);
                 }
             }
 
@@ -433,22 +448,41 @@ impl Instance {
 
         // Remove any workspace labels for workspaces we didn't see.
         if self.state.config().show_workspace_numbers() {
-            let existing_ws: Vec<u64> = self.workspace_labels.keys().copied().collect();
+            let existing_ws: Vec<u64> = self.workspace_buttons.keys().copied().collect();
             for ws in existing_ws.into_iter() {
                 if !seen_workspaces.contains(&ws) {
-                    if let Some(label) = self.workspace_labels.remove(&ws) {
-                        self.container.remove(&label);
+                    if let Some(button) = self.workspace_buttons.remove(&ws) {
+                        self.container.remove(&button);
                     }
                 }
             }
         } else {
             // If workspace numbers are disabled, ensure any existing labels are removed
             // from the container and cleared.
-            if !self.workspace_labels.is_empty() {
+            if !self.workspace_buttons.is_empty() {
                 // Consume the map so we can remove widgets from the container.
-                let labels = std::mem::take(&mut self.workspace_labels);
-                for (_ws, label) in labels.into_iter() {
-                    self.container.remove(&label);
+                let buttons = std::mem::take(&mut self.workspace_buttons);
+                for (_ws, button) in buttons.into_iter() {
+                    self.container.remove(&button);
+                }
+            }
+        }
+
+        // Loop over Workspace Buttons and set focused
+        if let Some(output) = self.get_output(&filter).await {
+
+            for button_t in &self.workspace_buttons {
+
+                let (idx, button) = button_t;
+
+                let context = &button.style_context();
+
+                if let Some(active_workspace) = self.state.niri().get_active_workspace_index_output(&output){
+                    if *idx == active_workspace as u64 {
+                        context.add_class("focused");
+                    } else {
+                        context.remove_class("focused");
+                    }
                 }
             }
         }
@@ -462,8 +496,8 @@ impl Instance {
             let ws_idx = window.workspace_idx();
             if !pushed_ws.contains(&ws_idx) {
                 if self.state.config().show_workspace_numbers() {
-                    if let Some(label) = self.workspace_labels.get(&ws_idx) {
-                        desired.push(label.clone().upcast::<gtk::Widget>());
+                    if let Some(button) = self.workspace_buttons.get(&ws_idx) {
+                        desired.push(button.clone().upcast::<gtk::Widget>());
                         pushed_ws.insert(ws_idx);
                     }
                 }
@@ -489,6 +523,7 @@ impl Instance {
         // Update the last snapshot.
         self.last_snapshot = Some(windows);
     }
+
 }
 
 /// A basic map of PIDs to windows.

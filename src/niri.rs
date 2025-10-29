@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use futures::Stream;
-use niri_ipc::{Action, Event, Output, Reply, Request, Workspace, socket::Socket};
+use niri_ipc::{Response, Action, Event, Output, Reply, Request, Workspace, socket::Socket, WorkspaceReferenceArg};
 pub use state::{Snapshot, Window};
 pub use window_stream::WindowStream;
 
@@ -28,6 +28,13 @@ impl Niri {
         reply::typed!(Handled, reply)
     }
 
+    /// Requests that the given workspace index should be activated.
+    pub fn activate_workspace(&self, idx: u8) -> Result<(), Error> {
+        let wsr = WorkspaceReferenceArg::Index(idx);
+        let reply = request(Request::Action(Action::FocusWorkspace { reference: wsr}))?;
+        reply::typed!(Handled, reply)
+    }
+
     /// Returns the current outputs.
     pub fn outputs(&self) -> Result<HashMap<String, Output>, Error> {
         let reply = request(Request::Outputs)?;
@@ -37,6 +44,21 @@ impl Niri {
     /// Returns a stream of window snapshots.
     pub fn window_stream(&self) -> WindowStream {
         WindowStream::new()
+    }
+
+    /// Returns index of active workspace given output
+    pub fn get_active_workspace_index_output(&self, output: &str) -> Option<u8> {
+        let reply = request(Request::Workspaces).ok()?;
+        if let Ok(response) = reply {
+            if let Response::Workspaces(list_w) = response {
+                for workspace in list_w {
+                    if workspace.is_active && workspace.output? == output {
+                        return Some(workspace.idx)
+                    }
+                }
+            } 
+        }
+        None
     }
 
     /// Returns a stream of workspace changes.
