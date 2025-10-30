@@ -394,6 +394,7 @@ impl Instance {
 
         // Filter windows by workspace only works if theyre also filtered by output
         // thats fine though because of DisplayVars enum. Stil be carefull
+        // This could be changed not necessary for now
         if self.state.config().display_vars().filter_by_workspace {
 
             let active_workspace_idx = match self.get_output(&filter).await {
@@ -487,6 +488,7 @@ impl Instance {
         }
 
         // Loop over Workspace Buttons and set focused only works with output Filter
+        // see: workspace filtering
         if let Some(output) = self.get_output(&filter).await {
 
             for button_t in &self.workspace_buttons {

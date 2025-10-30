@@ -97,17 +97,20 @@ added.
 The easiest way to get the app ID for a window is to ask Niri with `niri msg
 windows`. Note that app IDs are case sensitive.
 
-### Multiple outputs
+### Display Modes
 
-By default, the taskbar will only show applications running on the same output
-as the taskbar itself. You can enable the `show_all_outputs` option to show all
-applications on all outputs:
+The taskbar supports multiples modes of displaying windows. 
+`display_mode` support 4 valuies:
+- `everything` (default) will display all the windows on all the outputs and workspaces on all taskbars
+- `by_outputs` will display the windows of the current output on the corresponding taskbar no matter the workspace
+- `by_workspace` will display only the windows of the currently activ workspace on the corresponding taskbar per output
+- `workspace buttons` will display the all windows of the corresponding output grouped with a button to the workspace they're on
 
 ```jsonc
 {
   "cffi/niri-taskbar": {
     // other settings
-    "show_all_outputs": true,
+    "displaymode": "by_workspace",
   },
 }
 ```
@@ -142,6 +145,10 @@ The taskbar uses [the same Gtk styling mechanism as Waybar][style]. The top
 level taskbar element is given the class `.niri-taskbar`, and contains `button`
 elements within it. The only CSS class that is applied by default is the
 `focused` class, which is added to the button for the currently focused window.
+
+If youre using `workspace-button` mode you can differentiate between window buttons and workspace buttons by refering to the css classes: `taskbar-button-workspace` and `taskbar-button-window`.
+Both of these buttons implement the `focused` class.
+
 
 The default styling assumes a dark background. It provides a basic hover
 effect, and highlights the focused window.
