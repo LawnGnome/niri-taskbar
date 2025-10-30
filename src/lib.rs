@@ -382,7 +382,7 @@ impl Instance {
 
         // Collect the windows we should show according to the output filter so we can both
         // create/update widgets and then deterministically rebuild the container order.
-        let filtered_windows: Vec<_> = windows
+        let mut filtered_windows: Vec<_> = windows
             .iter()
             .filter(|window| {
                 filter
@@ -391,6 +391,17 @@ impl Instance {
                     .should_show(window.output().unwrap_or_default())
             })
             .collect();
+
+        let active_workspace_idx = match self.get_output(&filter).await {
+            Some(output) => self.state.niri().get_active_workspace_index_output(&output),
+            _ => None, //TODO get output without filter
+        };
+
+        if let Some(idx) = active_workspace_idx {
+            filtered_windows.retain(|window| {
+                window.workspace_idx()  == idx as u64
+            });
+        }
 
         for window in filtered_windows.iter().copied() {
             seen_workspaces.insert(window.workspace_idx());
@@ -471,7 +482,7 @@ impl Instance {
         }
 
         // Loop over Workspace Buttons and set focused
-        if let Some(output) = self.get_output(&filter).await {
+        if let Some(output) = self.get_output(&filter).await { //TODO: make agnostic of output filter although using workspace buttons without output filters makes no sense
 
             for button_t in &self.workspace_buttons {
 
