@@ -402,7 +402,8 @@ impl Instance {
             if self.state.config().show_workspace_numbers() {
                 if !self.workspace_buttons.contains_key(&ws_idx) {
                     let button = gtk::Button::with_label(&ws_idx.to_string());
-                    button.style_context().add_class("workspace-number"); //TODO: style
+                    button.style_context().add_class("taskbar-button-workspace");
+
 
                     let statec = self.state.clone();
                     button.connect_clicked(move |_| {
@@ -424,6 +425,7 @@ impl Instance {
                     // We add the widget here; container ordering will be rebuilt below so the
                     // precise position doesn't matter yet.
                     self.container.add(button.widget());
+                    button.widget().style_context().add_class("taskbar-button-window");
                     entry.insert(button)
                 }
             };
