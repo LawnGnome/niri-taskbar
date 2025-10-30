@@ -16,7 +16,7 @@ use tracing_subscriber::{EnvFilter, fmt::format::FmtSpan};
 use waybar_cffi::{
     Module,
     gtk::{
-        self, Orientation, gio, glib::MainContext, prelude::Cast, traits::{BoxExt, ButtonExt, ContainerExt, StyleContextExt, WidgetExt}
+        self, Orientation, gio, glib::MainContext, prelude::Cast, traits::{ButtonExt, ContainerExt, StyleContextExt, WidgetExt}
     },
     waybar_module,
 };
@@ -140,7 +140,7 @@ impl Instance {
 
     #[tracing::instrument(level = "DEBUG", skip(self))]
     async fn build_output_filter(&self) -> output::Filter {
-        if self.state.config().show_all_outputs() {
+        if !self.state.config().display_vars().filter_by_output {
             return output::Filter::ShowAll;
         }
 
@@ -392,17 +392,22 @@ impl Instance {
             })
             .collect();
 
-        let active_workspace_idx = match self.get_output(&filter).await {
-            Some(output) => self.state.niri().get_active_workspace_index_output(&output),
-            _ => None, //TODO get output without filter
-        };
+        // Filter windows by workspace only works if theyre also filtered by output
+        // thats fine though because of DisplayVars enum. Stil be carefull
+        if self.state.config().display_vars().filter_by_workspace {
 
-        if let Some(idx) = active_workspace_idx {
-            filtered_windows.retain(|window| {
-                window.workspace_idx()  == idx as u64
-            });
+            let active_workspace_idx = match self.get_output(&filter).await {
+                Some(output) => self.state.niri().get_active_workspace_index_output(&output),
+                _ => None,
+            };
+
+            if let Some(idx) = active_workspace_idx {
+                filtered_windows.retain(|window| {
+                    window.workspace_idx()  == idx as u64
+                });
+            }
+
         }
-
         for window in filtered_windows.iter().copied() {
             seen_workspaces.insert(window.workspace_idx());
 
@@ -410,7 +415,7 @@ impl Instance {
             // button already existed; this prevents labels from disappearing when
             // windows move between workspaces.
             let ws_idx = window.workspace_idx();
-            if self.state.config().show_workspace_numbers() {
+            if self.state.config().display_vars().workspace_buttons {
                 if !self.workspace_buttons.contains_key(&ws_idx) {
                     let button = gtk::Button::with_label(&ws_idx.to_string());
                     button.style_context().add_class("taskbar-button-workspace");
@@ -460,7 +465,7 @@ impl Instance {
         }
 
         // Remove any workspace labels for workspaces we didn't see.
-        if self.state.config().show_workspace_numbers() {
+        if self.state.config().display_vars().workspace_buttons {
             let existing_ws: Vec<u64> = self.workspace_buttons.keys().copied().collect();
             for ws in existing_ws.into_iter() {
                 if !seen_workspaces.contains(&ws) {
@@ -481,8 +486,8 @@ impl Instance {
             }
         }
 
-        // Loop over Workspace Buttons and set focused
-        if let Some(output) = self.get_output(&filter).await { //TODO: make agnostic of output filter although using workspace buttons without output filters makes no sense
+        // Loop over Workspace Buttons and set focused only works with output Filter
+        if let Some(output) = self.get_output(&filter).await {
 
             for button_t in &self.workspace_buttons {
 
@@ -508,7 +513,7 @@ impl Instance {
         for window in filtered_windows.iter().copied() {
             let ws_idx = window.workspace_idx();
             if !pushed_ws.contains(&ws_idx) {
-                if self.state.config().show_workspace_numbers() {
+                if self.state.config().display_vars().workspace_buttons {
                     if let Some(button) = self.workspace_buttons.get(&ws_idx) {
                         desired.push(button.clone().upcast::<gtk::Widget>());
                         pushed_ws.insert(ws_idx);
