@@ -104,7 +104,7 @@ The taskbar supports multiples modes of displaying windows.
 - `everything` (default) will display all the windows on all the outputs and workspaces on all taskbars
 - `by_outputs` will display the windows of the current output on the corresponding taskbar no matter the workspace
 - `by_workspace` will display only the windows of the currently activ workspace on the corresponding taskbar per output
-- `workspace buttons` will display the all windows of the corresponding output grouped with a button to the workspace they're on
+- `workspace_buttons` will display the all windows of the corresponding output grouped with a button to the workspace they're on
 
 ```jsonc
 {
@@ -146,7 +146,7 @@ level taskbar element is given the class `.niri-taskbar`, and contains `button`
 elements within it. The only CSS class that is applied by default is the
 `focused` class, which is added to the button for the currently focused window.
 
-If youre using `workspace-button` mode you can differentiate between window buttons and workspace buttons by refering to the css classes: `taskbar-button-workspace` and `taskbar-button-window`.
+If youre using `workspace_buttons` mode you can differentiate between window buttons and workspace buttons by refering to the css classes: `taskbar-button-workspace` and `taskbar-button-window`.
 Both of these buttons implement the `focused` class.
 
 
