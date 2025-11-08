@@ -146,7 +146,7 @@ level taskbar element is given the class `.niri-taskbar`, and contains `button`
 elements within it. The only CSS class that is applied by default is the
 `focused` class, which is added to the button for the currently focused window.
 
-If youre using `workspace_buttons` mode you can differentiate between window buttons and workspace buttons by refering to the css classes: `taskbar-button-workspace` and `taskbar-button-window`.
+If you're using `workspace_buttons` mode you can differentiate between window buttons and workspace buttons by referring to the css classes: `taskbar-button-workspace` and `taskbar-button-window`.
 Both of these buttons implement the `focused` class.
 
 
