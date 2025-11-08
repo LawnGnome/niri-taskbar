@@ -29,8 +29,10 @@ pub struct Notifications {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum DisplayMode {
     Everything,
+    #[default]
     ByOutput,
     ByWorkspace,
     WorkspaceButtons,
@@ -47,11 +49,6 @@ impl Default for Notifications {
     }
 }
 
-impl Default for DisplayMode {
-    fn default() -> Self {
-         DisplayMode::Everything
-    }
-}
 
 fn default_true() -> bool {
     true
