@@ -13,6 +13,21 @@ pub struct Config {
     notifications: Notifications,
     #[serde(default)]
     show_all_outputs: bool,
+    #[serde(default)]
+    orientation: TaskbarOrientation
+}
+
+#[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TaskbarOrientation {
+    Horizontal,
+    Vertical
+}
+
+impl Default for TaskbarOrientation {
+    fn default() -> Self {
+        TaskbarOrientation::Horizontal
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -98,6 +113,10 @@ impl Config {
 
     pub fn show_all_outputs(&self) -> bool {
         self.show_all_outputs
+    }
+
+    pub fn orientation(&self) -> TaskbarOrientation {
+        self.orientation
     }
 }
 
