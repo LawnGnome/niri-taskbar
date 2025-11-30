@@ -15,3 +15,15 @@ button.urgent {
 button:hover {
   background: rgba(255, 255, 255, 0.8);
 }
+
+/* Workspace number shown before the first icon of each workspace. */
+.workspace-number {
+  /* Small, unobtrusive pill with a little spacing */
+  padding: 0 6px;
+  margin: 0 6px 0 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  min-height: 18px;
+}
