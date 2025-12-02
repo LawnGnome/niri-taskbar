@@ -1,7 +1,7 @@
 [package]
 name = "niri-taskbar"
 description = "Niri taskbar module for Waybar"
-version = "0.3.0+niri.25.08"
+version = "0.3.0+niri.25.11"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/LawnGnome/niri-taskbar"
