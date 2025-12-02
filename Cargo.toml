@@ -19,7 +19,7 @@ freedesktop-icons = "0.4.0"
 futures = "0.3.31"
 itertools = "0.14.0"
 linicon = "2.3.0"
-niri-ipc = ">=25.8.0, <25.9.0"
+niri-ipc = "25.11.0"
 regex = "1.11.1"
 serde = { version = "1.0.218", features = ["derive"] }
 thiserror = "2.0.12"
