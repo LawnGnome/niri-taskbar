@@ -68,7 +68,7 @@ fn lookup(id: &str) -> Option<PathBuf> {
 }
 
 fn lookup_icon(id: &str) -> Option<PathBuf> {
-    if let Some(path) = freedesktop_icons::lookup(id).with_size(512).find() {
+    if let Some(path) = freedesktop_icons::lookup(id).with_theme(&get_theme()).with_size(512).find() {
         return Some(path);
     }
 
@@ -81,6 +81,13 @@ fn lookup_icon(id: &str) -> Option<PathBuf> {
     }
 
     None
+}
+
+fn get_theme() -> String {
+    match freedesktop_icons::default_theme_gtk() {
+        None => "hicolor".to_string(),
+        Some(s) => s
+    }
 }
 
 static XDG_DATA_DIRS: LazyLock<Vec<PathBuf>> = LazyLock::new(|| {
