@@ -28,7 +28,8 @@ distro, let me know and I'll update the README.)
 ### Requirements
 
 - Rust 1.87.0 or later
-- Niri 25.05
+- Niri (with a version corresponding to the version in the `niri-taskbar` crate
+  version; eg `0.4.0+niri-25.11` is specifically for Niri 25.11)
 - Gtk+ 3 (including the development package on distros that separate those out)
 - Waybar 0.12.0 (or any version that's API compatible with 0.12, which will
   _probably_ include later versions, but I have no actual knowledge there)
