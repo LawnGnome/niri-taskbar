@@ -4,7 +4,7 @@ use std::{
 };
 
 use button::Button;
-use config::Config;
+use config::{Config, TaskbarOrientation};
 use error::Error;
 use futures::StreamExt;
 use niri::{Snapshot, Window};
@@ -70,7 +70,11 @@ waybar_module!(TaskbarModule);
 async fn init(info: &waybar_cffi::InitInfo, state: State) -> Result<(), Error> {
     // Set up the box that we'll use to contain the actual window buttons.
     let root = info.get_root_widget();
-    let container = gtk::Box::new(Orientation::Horizontal, 0);
+    let gtk_orientation = match state.config().orientation() {
+        TaskbarOrientation::Horizontal => Orientation::Horizontal,
+        TaskbarOrientation::Vertical => Orientation::Vertical
+    };
+    let container = gtk::Box::new(gtk_orientation, 0);
     container.style_context().add_class("niri-taskbar");
     root.add(&container);
 
