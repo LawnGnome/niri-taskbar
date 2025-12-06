@@ -5,20 +5,22 @@ use niri_ipc::{Action, Event, Output, Reply, Request, Workspace, socket::Socket}
 pub use state::{Snapshot, Window};
 pub use window_stream::WindowStream;
 
-use crate::error::Error;
+use crate::{config::Config, error::Error};
 
 mod reply;
 mod state;
 mod window_stream;
 
 /// The top level client for Niri.
-#[derive(Debug, Clone, Copy)]
-pub struct Niri {}
+#[derive(Debug, Clone)]
+pub struct Niri {
+    config: Config,
+}
 
 impl Niri {
-    pub fn new() -> Self {
+    pub fn new(config: Config) -> Self {
         // Since niri_ipc is essentially stateless, we don't maintain anything much here.
-        Self {}
+        Self { config }
     }
 
     /// Requests that the given window ID should be activated.
@@ -36,7 +38,7 @@ impl Niri {
 
     /// Returns a stream of window snapshots.
     pub fn window_stream(&self) -> WindowStream {
-        WindowStream::new()
+        WindowStream::new(self.config.only_current_workspace())
     }
 
     /// Returns a stream of workspace changes.

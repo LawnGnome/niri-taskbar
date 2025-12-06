@@ -158,7 +158,7 @@ impl Instance {
         // What we'll do instead is match up what we can. Niri can tell us everything we want to
         // know about the output, and Gdk 3 does include things like the output geometry, make, and
         // model. So we'll match on those and hope for the best.
-        let niri = *self.state.niri();
+        let niri = self.state.niri().clone();
         let outputs = match gio::spawn_blocking(move || niri.outputs()).await {
             Ok(Ok(outputs)) => outputs,
             Ok(Err(e)) => {
