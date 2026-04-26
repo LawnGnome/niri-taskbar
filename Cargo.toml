@@ -1,7 +1,7 @@
 [package]
 name = "niri-taskbar"
 description = "Niri taskbar module for Waybar"
-version = "0.4.0+niri.25.11"
+version = "0.4.1+niri.26.4"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/LawnGnome/niri-taskbar"
@@ -19,7 +19,7 @@ freedesktop-icons = "0.4.0"
 futures = "0.3.31"
 itertools = "0.14.0"
 linicon = "2.3.0"
-niri-ipc = ">=25.11.0, <25.12.0"
+niri-ipc = ">=26.4.0, <26.5.0"
 regex = "1.12.2"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.17"
