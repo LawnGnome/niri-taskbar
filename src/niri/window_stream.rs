@@ -14,10 +14,10 @@ pub struct WindowStream {
 }
 
 impl WindowStream {
-    pub(super) fn new() -> Self {
+    pub(super) fn new(only_current_workspace: bool) -> Self {
         let (tx, rx) = async_channel::unbounded();
         std::thread::spawn(move || {
-            if let Err(e) = window_stream(tx) {
+            if let Err(e) = window_stream(tx, only_current_workspace) {
                 tracing::error!(%e, "Niri taskbar window stream error");
             }
         });
@@ -31,7 +31,7 @@ impl WindowStream {
     }
 }
 
-fn window_stream(tx: Sender<Snapshot>) -> Result<(), Error> {
+fn window_stream(tx: Sender<Snapshot>, only_current_workspace: bool) -> Result<(), Error> {
     let mut socket = socket()?;
     let reply = socket.send(Request::EventStream).map_err(Error::NiriIpc)?;
     reply::typed!(Handled, reply)?;
@@ -43,7 +43,7 @@ fn window_stream(tx: Sender<Snapshot>) -> Result<(), Error> {
         // doesn't matter what happens to this process.
         match next() {
             Ok(event) => {
-                if let Some(snapshot) = state.with_event(event) {
+                if let Some(snapshot) = state.with_event(event, only_current_workspace) {
                     tx.send_blocking(snapshot)
                         .map_err(|_| Error::WindowStreamSend)?;
                 }

@@ -57,7 +57,8 @@ practice will look something like this:
   // ...
   "cffi/niri-taskbar": {
     "module_path": "/your/path/to/libniri_taskbar.so",
-  },
+    // by deafult windows from all workspaces are displayed
+    "only_current_workspace": true,
 }
 ```
 

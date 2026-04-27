@@ -21,9 +21,9 @@ impl State {
     /// Instantiates the global state.
     pub fn new(config: Config) -> Self {
         Self(Arc::new(Inner {
-            config,
+            config: config.clone(),
             icon_cache: icon::Cache::default(),
-            niri: Niri::new(),
+            niri: Niri::new(config),
         }))
     }
 
