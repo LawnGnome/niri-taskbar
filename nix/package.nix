@@ -17,7 +17,7 @@ let
     # Maintainer note: this hash must be updated whenever Cargo.lock changes.
     # Set it to lib.fakeHash, run `nix build`, then substitute the correct
     # hash from the error output.
-    cargoHash = "sha256-WRc1+ZVhiIfmLHaczAPq21XudI08CgVhlIhVcf0rmSw=";
+    cargoHash = "sha256-Wbwp1U2oLur8tKNYyWFRj4XWigOhbxcWm6/RFk46TXY=";
 
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [ gtk3 ];
