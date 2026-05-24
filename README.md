@@ -18,6 +18,37 @@ update the README.
 @coreymwamba has kindly packaged this as [the `waybar-niri-taskbar` package in
 the AUR][aur].
 
+### NixOS
+
+A Nix flake is provided. Add `niri-taskbar` to your flake inputs:
+
+```nix
+inputs = {
+  niri-taskbar = {
+    url = "github:LawnGnome/niri-taskbar";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+};
+```
+
+#### Nix-managed Waybar config
+
+You can configure Waybar through home-manager's `programs.waybar` like this:
+
+```nix
+{ inputs, pkgs, ... }:
+{
+  nixpkgs.overlays = [ inputs.niri-taskbar.overlays.default ];
+
+  programs.waybar.settings = [
+    {
+      # ... your bar settings ...
+      "cffi/niri-taskbar".module_path = pkgs.niri-taskbar.modulePath;
+    }
+  ];
+}
+```
+
 ### From source
 
 Users of other distributions and OSes will need to build from source.
@@ -176,6 +207,7 @@ demonstrated above, you could add a border highlight like so:
 
 [aur]: https://aur.archlinux.org/packages/waybar-niri-taskbar
 [cffi]: https://github.com/Alexays/Waybar/wiki/Module:-CFFI
+[home-manager]: https://github.com/nix-community/home-manager
 [niri]: https://github.com/YaLTeR/niri
 [style]: https://github.com/Alexays/Waybar/wiki/Styling
 [waybar]: https://github.com/Alexays/Waybar
