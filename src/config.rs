@@ -13,6 +13,8 @@ pub struct Config {
     notifications: Notifications,
     #[serde(default)]
     show_all_outputs: bool,
+    #[serde(default, rename = "icon-size", alias = "icon_size")]
+    icon_size: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -43,6 +45,11 @@ fn default_true() -> bool {
 }
 
 impl Config {
+    /// A fixed logical icon size avoids retaining a transient bar height.
+    pub fn icon_size(&self) -> Option<i32> {
+        self.icon_size.map(|size| size.clamp(1, 256))
+    }
+
     /// Returns all possible CSS classes that a particular application might have set.
     pub fn app_classes(&self, app_id: &str) -> Vec<&str> {
         self.apps

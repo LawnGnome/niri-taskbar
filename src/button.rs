@@ -145,6 +145,7 @@ impl Button {
     #[tracing::instrument(level = "TRACE")]
     fn connect_size_allocate(&self, icon_path: Option<PathBuf>) {
         let last_size = RefCell::new(None);
+        let fixed_icon_size = self.state.config().icon_size();
 
         self.button
             .connect_size_allocate(move |button, allocation| {
@@ -194,10 +195,15 @@ impl Button {
                     let margin = context.margin(StateFlags::NORMAL);
                     let padding = context.padding(StateFlags::NORMAL);
 
-                    let size = allocation.height()
-                        - border.vertical_size()
-                        - margin.vertical_size()
-                        - padding.vertical_size();
+                    // A configured size must not depend on the current allocation:
+                    // a temporarily tall sibling would otherwise enlarge the icon
+                    // and prevent the whole bar from shrinking again.
+                    let size = fixed_icon_size.unwrap_or_else(|| {
+                        allocation.height()
+                            - border.vertical_size()
+                            - margin.vertical_size()
+                            - padding.vertical_size()
+                    });
 
                     // Now we know the size, we can actually load the image.
                     let image =
